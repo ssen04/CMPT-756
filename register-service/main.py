@@ -1,37 +1,56 @@
 from fastapi import FastAPI, HTTPException
 import mysql.connector
 from pydantic import BaseModel
+import os
+import hashlib
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="Register Customer Service")
 
-# Database connection
-db = mysql.connector.connect(
-    host="34.186.155.72",
-    user="root",
-    password="Canada@2021",
-    database="ecomm_db"
-)
-cursor = db.cursor(dictionary=True)
+def get_db_connection():
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME")
+    )
 
-
-# Pydantic model for request
 class Customer(BaseModel):
-    name: str
+    full_name: str
     email: str
     password: str
 
+@app.get("/")
+def home():
+    return {"message": "Register Service Running"}
 
 @app.post("/register")
 def register_customer(customer: Customer):
-    # Check if email exists
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
     cursor.execute("SELECT * FROM customers WHERE email=%s", (customer.email,))
     if cursor.fetchone():
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Insert new customer
+    password_hash = hashlib.sha256(customer.password.encode()).hexdigest()
+
     cursor.execute(
-        "INSERT INTO customers (name, email, password) VALUES (%s, %s, %s)",
-        (customer.name, customer.email, customer.password)
+        "INSERT INTO customers (full_name, email, password_hash) VALUES (%s, %s, %s)",
+        (customer.full_name, customer.email, password_hash)
     )
     db.commit()
-    return {"message": "Customer registered successfully", "email": customer.email}
+
+    cursor.execute("SELECT customer_id FROM customers WHERE email=%s", (customer.email,))
+    user = cursor.fetchone()
+
+    cursor.close()
+    db.close()
+
+    return {
+        "message": "Customer registered successfully",
+        "customer_id": user["customer_id"],
+        "email": customer.email
+    }
