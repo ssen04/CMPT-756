@@ -1,20 +1,17 @@
 from fastapi import FastAPI, HTTPException
 import mysql.connector
 from pydantic import BaseModel
-import os
 import hashlib
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI(title="Register Customer Service")
 
+# Hardcoded database connection
 def get_db_connection():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME")
+        host="127.0.0.1",         # your DB host
+        user="test",              # your DB username
+        password="Canada@2021",   # your DB password
+        database="ecomm_db"       # your database name
     )
 
 class Customer(BaseModel):
