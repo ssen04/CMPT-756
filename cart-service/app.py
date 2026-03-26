@@ -58,7 +58,7 @@ class ErrorResponse(BaseModel):
 # Shared MySQL connection used by the cart service.
 db = mysql.connector.connect(
     host="34.186.155.72",
-    user="root",
+    user="test",
     password="Canada@2021",
     database="ecomm_db",
 )

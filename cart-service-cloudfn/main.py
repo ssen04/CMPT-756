@@ -12,14 +12,15 @@ def cart_service(request):
 
     try:
         if request.method == "POST" and path.endswith("/cart"):
-            # Handle add-to-cart requests.
             payload = request.get_json(silent=True) or {}
             return jsonify(add_item_to_cart(payload)), 200
 
         if request.method == "GET" and "/cart/" in path:
-            # Handle cart lookup requests.
             customer_id = int(path.rsplit("/", 1)[-1])
             return jsonify(get_cart_items(customer_id)), 200
+
+        if request.method == "GET" and path == "/":
+            return jsonify({"message": "Cart Service function is running"}), 200
 
         return jsonify({"detail": "Route not found"}), 404
     except ValidationError as exc:
