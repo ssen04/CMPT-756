@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 
+from handlers import create_order_for_customer, get_order_by_id
 from schemas import ErrorResponse, OrderResponse, PlaceOrderRequest
-from service import ServiceError, get_order_details, place_order
+from service import ServiceError
 
 
 app = FastAPI(title="Order Service", version="1.0.0")
@@ -18,7 +19,7 @@ app = FastAPI(title="Order Service", version="1.0.0")
 )
 def create_order(payload: PlaceOrderRequest) -> OrderResponse:
     try:
-        return place_order(payload.customer_id)
+        return create_order_for_customer(payload.customer_id)
     except ServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
 
@@ -33,6 +34,6 @@ def create_order(payload: PlaceOrderRequest) -> OrderResponse:
 )
 def read_order(order_id: int) -> OrderResponse:
     try:
-        return get_order_details(order_id)
+        return get_order_by_id(order_id)
     except ServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
