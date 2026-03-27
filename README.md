@@ -28,5 +28,3 @@ The goal of this project is to analyze how deployment choices affect system perf
 
 We compare these approaches primarily using **latency**.
 
-
-## System Architecture
