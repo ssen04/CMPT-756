@@ -8,17 +8,17 @@
 
 #### VM
 ```bash
-k6 run -e BASE_URL=http://136.109.180.133:8002 -e CUSTOMER_ID=1 k6/cart-get-test.js
+k6 run -e BASE_URL=http://136.109.180.133:8002 -e CUSTOMER_ID=1 k6/cart-service/cart-get-test.js
 ```
 
 #### Cloud Run
 ```bash
-k6 run -e BASE_URL=https://cart-service-1009382473191.us-west1.run.app -e CUSTOMER_ID=1 k6/cart-get-test.js
+k6 run -e BASE_URL=https://cart-service-1009382473191.us-west1.run.app -e CUSTOMER_ID=1 k6/cart-service/cart-get-test.js
 ```
 
 #### Cloud Function
 ```bash
-k6 run -e BASE_URL=https://us-west1-cmpt756-project-489717.cloudfunctions.net/cart-service-function -e CUSTOMER_ID=1 k6/cart-get-test.js
+k6 run -e BASE_URL=https://us-west1-cmpt756-project-489717.cloudfunctions.net/cart-service-function -e CUSTOMER_ID=1 k6/cart-service/cart-get-test.js
 ```
 
 ### 2. POST test
@@ -27,17 +27,17 @@ k6 run -e BASE_URL=https://us-west1-cmpt756-project-489717.cloudfunctions.net/ca
 
 #### VM
 ```bash
-k6 run -e BASE_URL=http://136.109.180.133:8002 -e CUSTOMER_ID=4 -e PRODUCT_ID=1 -e QUANTITY=1 k6/cart-post-test.js
+k6 run -e BASE_URL=http://136.109.180.133:8002 -e CUSTOMER_ID=4 -e PRODUCT_ID=1 -e QUANTITY=1 k6/cart-service/cart-post-test.js
 ```
 
 #### Cloud Run
 ```bash
-k6 run -e BASE_URL=https://cart-service-1009382473191.us-west1.run.app -e CUSTOMER_ID=4 -e PRODUCT_ID=1 -e QUANTITY=1 k6/cart-post-test.js
+k6 run -e BASE_URL=https://cart-service-1009382473191.us-west1.run.app -e CUSTOMER_ID=4 -e PRODUCT_ID=1 -e QUANTITY=1 k6/cart-service/cart-post-test.js
 ```
 
 #### Cloud Function
 ```bash
-k6 run -e BASE_URL=https://us-west1-cmpt756-project-489717.cloudfunctions.net/cart-service-function -e CUSTOMER_ID=4 -e PRODUCT_ID=1 -e QUANTITY=1 k6/cart-post-test.js
+k6 run -e BASE_URL=https://us-west1-cmpt756-project-489717.cloudfunctions.net/cart-service-function -e CUSTOMER_ID=4 -e PRODUCT_ID=1 -e QUANTITY=1 k6/cart-service/cart-post-test.js
 ```
 
 ## Seed Data Reference
