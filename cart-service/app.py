@@ -55,17 +55,19 @@ class CartResponse(BaseModel):
 class ErrorResponse(BaseModel):
     # Standard error payload for API documentation.
     detail: str
-# Shared MySQL connection used by the cart service.
-db = mysql.connector.connect(
-    host="34.186.155.72",
-    user="test",
-    password="Canada@2021",
-    database="ecomm_db",
-)
-cursor = db.cursor(dictionary=True)
 
 
-def get_customer(customer_id: int):
+def get_db_connection():
+    # Open a fresh MySQL connection for each service request.
+    return mysql.connector.connect(
+        host="34.186.155.72",
+        user="test",
+        password="Canada@2021",
+        database="ecomm_db",
+    )
+
+
+def get_customer(cursor, customer_id: int):
     # Load the customer to validate the request.
     cursor.execute(
         "SELECT customer_id, full_name, email FROM customers WHERE customer_id = %s",
@@ -74,7 +76,7 @@ def get_customer(customer_id: int):
     return cursor.fetchone()
 
 
-def get_product(product_id: int):
+def get_product(cursor, product_id: int):
     # Load the product to validate price and stock.
     cursor.execute(
         """
@@ -87,7 +89,7 @@ def get_product(product_id: int):
     return cursor.fetchone()
 
 
-def get_active_cart(customer_id: int):
+def get_active_cart(cursor, customer_id: int):
     # Find the most recent active cart for the customer.
     cursor.execute(
         """
@@ -102,9 +104,9 @@ def get_active_cart(customer_id: int):
     return cursor.fetchone()
 
 
-def get_or_create_active_cart(customer_id: int):
+def get_or_create_active_cart(db, cursor, customer_id: int):
     # Reuse the active cart or create a new one.
-    cart = get_active_cart(customer_id)
+    cart = get_active_cart(cursor, customer_id)
     if cart:
         return cart
 
@@ -122,126 +124,139 @@ def get_or_create_active_cart(customer_id: int):
 def add_item_to_cart(payload: dict):
     # Add a new product or increase quantity for an existing cart item.
     item = CartItemRequest(**payload)
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True, buffered=True)
 
-    customer = get_customer(item.customer_id)
-    if not customer:
-        raise ServiceError(404, "Customer not found")
+    try:
+        customer = get_customer(cursor, item.customer_id)
+        if not customer:
+            raise ServiceError(404, "Customer not found")
 
-    product = get_product(item.product_id)
-    if not product:
-        raise ServiceError(404, "Product not found")
+        product = get_product(cursor, item.product_id)
+        if not product:
+            raise ServiceError(404, "Product not found")
 
-    if product["stock_quantity"] < item.quantity:
-        raise ServiceError(400, "Insufficient stock")
+        if product["stock_quantity"] < item.quantity:
+            raise ServiceError(400, "Insufficient stock")
 
-    cart = get_or_create_active_cart(item.customer_id)
-
-    cursor.execute(
-        """
-        SELECT cart_item_id, quantity
-        FROM cart_items
-        WHERE cart_id = %s AND product_id = %s
-        """,
-        (cart["cart_id"], item.product_id),
-    )
-    existing_item = cursor.fetchone()
-
-    new_quantity = item.quantity
-    if existing_item:
-        new_quantity += existing_item["quantity"]
-        if product["stock_quantity"] < new_quantity:
-            raise ServiceError(400, "Requested quantity exceeds available stock")
+        cart = get_or_create_active_cart(db, cursor, item.customer_id)
 
         cursor.execute(
             """
-            UPDATE cart_items
-            SET quantity = %s, unit_price = %s
-            WHERE cart_item_id = %s
+            SELECT cart_item_id, quantity
+            FROM cart_items
+            WHERE cart_id = %s AND product_id = %s
             """,
-            (new_quantity, product["price"], existing_item["cart_item_id"]),
+            (cart["cart_id"], item.product_id),
         )
-    else:
+        existing_item = cursor.fetchone()
+
+        new_quantity = item.quantity
+        if existing_item:
+            new_quantity += existing_item["quantity"]
+            if product["stock_quantity"] < new_quantity:
+                raise ServiceError(400, "Requested quantity exceeds available stock")
+
+            cursor.execute(
+                """
+                UPDATE cart_items
+                SET quantity = %s, unit_price = %s
+                WHERE cart_item_id = %s
+                """,
+                (new_quantity, product["price"], existing_item["cart_item_id"]),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO cart_items (cart_id, product_id, quantity, unit_price)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (cart["cart_id"], item.product_id, item.quantity, product["price"]),
+            )
+
         cursor.execute(
-            """
-            INSERT INTO cart_items (cart_id, product_id, quantity, unit_price)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (cart["cart_id"], item.product_id, item.quantity, product["price"]),
+            "UPDATE cart SET updated_at = NOW() WHERE cart_id = %s",
+            (cart["cart_id"],),
         )
+        db.commit()
 
-    cursor.execute(
-        "UPDATE cart SET updated_at = NOW() WHERE cart_id = %s",
-        (cart["cart_id"],),
-    )
-    db.commit()
-
-    return {
-        "message": "Item added to cart successfully",
-        "cart_id": cart["cart_id"],
-        "customer_id": item.customer_id,
-        "product_id": item.product_id,
-        "quantity": new_quantity,
-        "unit_price": float(product["price"]),
-    }
+        return {
+            "message": "Item added to cart successfully",
+            "cart_id": cart["cart_id"],
+            "customer_id": item.customer_id,
+            "product_id": item.product_id,
+            "quantity": new_quantity,
+            "unit_price": float(product["price"]),
+        }
+    finally:
+        cursor.close()
+        db.close()
 
 
 def get_cart_items(customer_id: int):
     # Return the active cart with item details and total amount.
-    customer = get_customer(customer_id)
-    if not customer:
-        raise ServiceError(404, "Customer not found")
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True, buffered=True)
 
-    cart = get_active_cart(customer_id)
-    if not cart:
+    try:
+        customer = get_customer(cursor, customer_id)
+        if not customer:
+            raise ServiceError(404, "Customer not found")
+
+        cart = get_active_cart(cursor, customer_id)
+        if not cart:
+            return {
+                "customer_id": customer_id,
+                "cart_id": None,
+                "items": [],
+                "total_amount": 0.0,
+            }
+
+        cursor.execute(
+            """
+            SELECT
+                ci.cart_item_id,
+                ci.product_id,
+                p.name AS product_name,
+                ci.quantity,
+                ci.unit_price,
+                (ci.quantity * ci.unit_price) AS line_total
+            FROM cart_items ci
+            JOIN products p ON p.product_id = ci.product_id
+            WHERE ci.cart_id = %s
+            ORDER BY ci.cart_item_id
+            """,
+            (cart["cart_id"],),
+        )
+        items = cursor.fetchall()
+
+        total_amount = sum(
+            (
+                row["line_total"]
+                if isinstance(row["line_total"], Decimal)
+                else Decimal(str(row["line_total"]))
+            )
+            for row in items
+        )
+
+        normalized_items = [
+            {
+                "cart_item_id": row["cart_item_id"],
+                "product_id": row["product_id"],
+                "product_name": row["product_name"],
+                "quantity": row["quantity"],
+                "unit_price": float(row["unit_price"]),
+                "line_total": float(row["line_total"]),
+            }
+            for row in items
+        ]
+
         return {
             "customer_id": customer_id,
-            "cart_id": None,
-            "items": [],
-            "total_amount": 0.0,
+            "cart_id": cart["cart_id"],
+            "items": normalized_items,
+            "total_amount": float(total_amount),
         }
-
-    cursor.execute(
-        """
-        SELECT
-            ci.cart_item_id,
-            ci.product_id,
-            p.name AS product_name,
-            ci.quantity,
-            ci.unit_price,
-            (ci.quantity * ci.unit_price) AS line_total
-        FROM cart_items ci
-        JOIN products p ON p.product_id = ci.product_id
-        WHERE ci.cart_id = %s
-        ORDER BY ci.cart_item_id
-        """,
-        (cart["cart_id"],),
-    )
-    items = cursor.fetchall()
-
-    total_amount = sum(
-        (
-            row["line_total"]
-            if isinstance(row["line_total"], Decimal)
-            else Decimal(str(row["line_total"]))
-        )
-        for row in items
-    )
-
-    normalized_items = [
-        {
-            "cart_item_id": row["cart_item_id"],
-            "product_id": row["product_id"],
-            "product_name": row["product_name"],
-            "quantity": row["quantity"],
-            "unit_price": float(row["unit_price"]),
-            "line_total": float(row["line_total"]),
-        }
-        for row in items
-    ]
-
-    return {
-        "customer_id": customer_id,
-        "cart_id": cart["cart_id"],
-        "items": normalized_items,
-        "total_amount": float(total_amount),
-    }
+    finally:
+        cursor.close()
+        db.close()
