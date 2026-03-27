@@ -1,4 +1,6 @@
-# Cloud Deployment Choices & Microservices Performance (CMPT 756 Project)
+# Cloud Deployment Impact on Microservices Performance
+
+SFU CMPT 756 Project
 
 This project explores how different cloud deployment strategies impact the performance of a microservices-based web application. We build a simple e-commerce system and evaluate latency across multiple deployment environments.
 
