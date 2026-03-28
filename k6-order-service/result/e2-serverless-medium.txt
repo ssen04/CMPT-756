@@ -1,0 +1,11 @@
+Metric                 Value           
+---------------------------------------
+Latency (avg)          598.83 ms       
+Latency (median)       552.31 ms       
+Latency (p95)          921.76 ms       
+Latency (max)          1,645.39 ms     
+Response Time (avg)    598.83 ms       
+Error Rate             0.00%           
+Cold Start Time        N/A             
+Throughput (req/s)     3.77            
+Total Requests         120             
