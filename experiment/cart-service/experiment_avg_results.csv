@@ -1,0 +1,13 @@
+Experiment ID,Test Date,Deployment Type,Service Name,HTTP Method,Workload Level,VUs,Duration,Run Number,Average Latency (ms),Median Latency (ms),P95 Latency (ms),P99 Latency (ms),Min Latency (ms),Max Latency (ms),Requests per Second,Total Requests,Failed Requests,Error Rate (%),Cold Start Observed (Yes/No),Notes
+E1,2026-03-27,VM,cart-service,GET,Low,5,30s,Average of 3 sequential runs,292.80,284.01,338.52,360.04,260.51,454.13,3.83,118.00,0,0,No,
+E1,2026-03-27,Container,cart-service,GET,Low,5,30s,Average of 3 sequential runs,333.42,304.52,387.69,850.74,281.74,858.29,3.72,113.33,0,0,Yes,"one of the three runs had a noticeable tail-latency spike."
+E1,2026-03-27,Serverless,cart-service,GET,Low,5,30s,Average of 3 sequential runs,317.74,281.91,381.05,901.61,268.58,911.11,3.76,115.00,0,0,Yes,"one run showed a strong tail-latency spike consistent with startup overhead."
+E2,2026-03-27,VM,cart-service,POST,Low,5,30s,Average of 3 sequential runs,438.44,426.08,530.15,605.82,380.76,645.20,3.43,105.00,0,0,No,
+E2,2026-03-27,Container,cart-service,POST,Low,5,30s,Average of 3 sequential runs,522.46,430.57,946.55,1441.33,403.06,1499.36,3.22,100.00,0,0,Yes,"one run showed noticeably higher tail latency, likely due to container startup or platform overhead."
+E2,2026-03-27,Serverless,cart-service,POST,Low,5,30s,Average of 3 sequential runs,444.72,409.51,571.69,1010.32,390.85,1055.66,3.41,106.67,0,0,Yes,"one run showed a noticeable tail-latency spike."
+E3,2026-03-27,VM,cart-service,GET,Medium,10,30s,Average of 3 sequential runs,286.87,272.18,331.76,341.70,258.00,361.00,7.70,240.00,0,0,No,
+E3,2026-03-27,Container,cart-service,GET,Medium,10,30s,Average of 3 sequential runs,349.23,325.94,412.70,857.25,278.32,1085.88,7.35,229.00,0,0,Yes,"one run showed a noticeable tail-latency spike."
+E3,2026-03-27,Serverless,cart-service,GET,Medium,10,30s,Average of 3 sequential runs,307.65,277.85,358.13,1112.15,267.79,1226.95,7.58,235.00,0,0,Yes,"one run showed a strong tail-latency spike consistent with startup overhead."
+E4,2026-03-27,VM,cart-service,POST,High,30,30s,Average of 3 sequential runs,601.79,568.64,702.12,1653.33,427.72,1986.67,18.21,574.33,0,0,No,
+E4,2026-03-27,Container,cart-service,POST,High,30,30s,Average of 3 sequential runs,563.34,484.46,895.41,2523.33,412.30,2836.67,18.67,587.33,0,0,Yes,"strong tail-latency spikes were observed."
+E4,2026-03-27,Serverless,cart-service,POST,High,30,30s,Average of 3 sequential runs,544.95,477.58,1029.01,1940.00,395.35,2260.00,18.86,593.00,0,0,Yes,strong tail-latency spikes were observed.

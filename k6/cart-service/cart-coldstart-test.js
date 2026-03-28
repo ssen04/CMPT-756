@@ -1,15 +1,18 @@
 import http from "k6/http";
-import { check, sleep } from "k6";
+import { check } from "k6";
 
 export const options = {
-  vus: 10,
-  duration: "30s",
+  vus: 1,
+  iterations: 1,
+  summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
 };
 
 const baseUrl = __ENV.BASE_URL;
 
 if (!baseUrl) {
-  throw new Error("BASE_URL is required. Example: k6 run -e BASE_URL=http://136.109.180.133:8002 k6/cart-get-test.js");
+  throw new Error(
+    "BASE_URL is required. Example: k6 run -e BASE_URL=https://service-url k6/cart-coldstart-test.js",
+  );
 }
 
 export default function () {
@@ -19,6 +22,4 @@ export default function () {
   check(response, {
     "GET /cart status is 200": (res) => res.status === 200,
   });
-
-  sleep(1);
 }
