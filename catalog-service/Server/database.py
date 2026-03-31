@@ -8,7 +8,7 @@ load_dotenv()  # carga variables de entorno desde .env
 db_pool = pooling.MySQLConnectionPool(
     pool_name="catalog_pool",
     pool_size=5,
-    host=os.getenv("DB_HOST"),
+    host=os.getenv("34.186.155.72"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     database=os.getenv("DB_NAME"),
