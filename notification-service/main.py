@@ -2,11 +2,19 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import mysql.connector
 from datetime import datetime
+import threading
+
+from pubsub_subscriber import start_subscriber
 
 app = FastAPI()
 
 class NotificationRequest(BaseModel):
     order_id: int
+
+
+@app.on_event("startup")
+def start_pubsub_listener():
+    threading.Thread(target=start_subscriber, daemon=True).start()
 
 def get_db_connection():
 

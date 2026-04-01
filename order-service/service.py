@@ -3,6 +3,7 @@ from decimal import Decimal
 from mysql.connector.errors import Error as MySQLError
 
 from db import DatabaseConnectionError, get_connection, get_dict_cursor
+from pubsub_publisher import publish_order_created_event
 from schemas import OrderItemResponse, OrderResponse
 
 
@@ -149,10 +150,12 @@ def place_order(customer_id: int) -> OrderResponse:
         )
         order_row = cursor.fetchone()
 
-        return OrderResponse(
+        order = OrderResponse(
             **order_row,
             items=_fetch_order_items(cursor, order_id),
         )
+        publish_order_created_event(order)
+        return order
     except ServiceError:
         if connection.in_transaction:
             connection.rollback()
